@@ -6,7 +6,7 @@ import java.util.*;
 
 public class SmtpServer {
     // Use a custom port (e.g., 2525) to avoid needing special privileges.
-    private static final int PORT = 25;
+    private static final int PORT = 50025;
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
