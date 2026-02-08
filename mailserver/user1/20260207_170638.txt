@@ -1,0 +1,6 @@
+From: user1@localhost
+To: user1@localhost
+Date: Sat, 07 Feb 2026 17:06:38 +0100
+Subject: Test Email
+
+123456789

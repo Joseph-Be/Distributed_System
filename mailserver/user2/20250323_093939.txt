@@ -1,0 +1,7 @@
+From: test@localhost
+To: user1@localhost, user2@localhost
+Date: Sun, 23 Mar 2025 09:39:39 +0100
+Subject: Test Email
+
+Subject: Email multi-destinataires
+Ceci est un email envoy� � plusieurs destinataires.
