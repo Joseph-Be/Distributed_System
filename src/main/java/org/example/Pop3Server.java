@@ -2,6 +2,12 @@ package org.example;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
+
+
 
 public class Pop3Server {
     private static final int PORT = 110; // Custom port to avoid conflicts
@@ -34,6 +40,7 @@ class Pop3Session extends Thread {
     private boolean authenticated;
     private List<Boolean> deletionFlags; // Déclaration correcte
 
+    
 
     public Pop3Session(Socket socket) {
         this.socket = socket;
@@ -98,37 +105,59 @@ class Pop3Session extends Thread {
     }
 
     private void handleUser(String arg) {
-        File dir = new File("mailserver/" + arg);
-        if (dir.exists() && dir.isDirectory()) {
-            username = arg;
-            userDir = dir;
-            out.println("+OK User accepted");
-        } else {
-            out.println("-ERR User not found");
-        }
+    if (!UserStore.userExists(arg)) {
+        out.println("-ERR User not found");
+        return;
     }
 
-    private void handlePass(String arg) {
-        if (username == null) {
-            out.println("-ERR USER required first");
+    username = arg;
+    userDir = new File("mailserver/" + username);
+
+    // Vérifier ou créer le dossier utilisateur
+    if (!userDir.exists()) {
+        if (!userDir.mkdirs()) {
+            username = null;
+            userDir = null;
+            out.println("-ERR Cannot create user directory");
             return;
         }
-        // Pour simplifier, on suppose que "userDir" est le dossier de l'utilisateur déjà défini
-        authenticated = true;
-        // Chargez les fichiers du répertoire dans une ArrayList mutable
-        File[] files = userDir.listFiles();
-        if (files == null) {
-            emails = new ArrayList<>();
-        } else {
-            emails = new ArrayList<>(Arrays.asList(files));
-        }
-        // Initialisez les flags de suppression : aucun email n'est marqué (false)
-        deletionFlags = new ArrayList<>();
-        for (int i = 0; i < emails.size(); i++) {
-            deletionFlags.add(false);
-        }
-        out.println("+OK Password accepted");
+    } else if (!userDir.isDirectory()) {
+        username = null;
+        userDir = null;
+        out.println("-ERR User path is not a directory");
+        return;
     }
+
+    out.println("+OK User accepted");
+}
+
+private void handlePass(String arg) {
+    if (username == null) {
+        out.println("-ERR USER required first");
+        return;
+    }
+
+    if (!UserStore.authenticate(username, arg)) {
+        out.println("-ERR Invalid password");
+        return;
+    }
+
+    authenticated = true;
+
+    File[] files = userDir.listFiles();
+    if (files == null) {
+        emails = new ArrayList<>();
+    } else {
+        emails = new ArrayList<>(Arrays.asList(files));
+    }
+
+    deletionFlags = new ArrayList<>();
+    for (int i = 0; i < emails.size(); i++) {
+        deletionFlags.add(false);
+    }
+
+    out.println("+OK Password accepted");
+}
 
 
 
@@ -239,3 +268,62 @@ class Pop3Session extends Thread {
 
 }
 
+
+class UserStore {
+
+    private static final String USERS_FILE = "mailserver/users.json";
+    private static final Map<String, String> users = new HashMap<>();
+
+    static {
+        loadUsers();
+    }
+
+    private static void loadUsers() {
+        try {
+            File file = new File(USERS_FILE);
+            if (!file.exists()) {
+                System.err.println("users.json not found");
+                return;
+            }
+
+            String content = new String(
+                    Files.readAllBytes(file.toPath()),
+                    StandardCharsets.UTF_8
+            );
+
+            // Nettoyage basique du JSON
+            content = content.trim();
+            content = content.substring(1, content.length() - 1); // retire { }
+
+            String[] entries = content.split(",");
+
+            for (String entry : entries) {
+                String[] pair = entry.split(":");
+                if (pair.length == 2) {
+                    String key = clean(pair[0]);
+                    String value = clean(pair[1]);
+                    users.put(key, value);
+                }
+            }
+
+            System.out.println("Loaded users: " + users.keySet());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String clean(String s) {
+        return s.trim()
+                .replace("\"", "")
+                .replace("{", "")
+                .replace("}", "");
+    }
+    public static boolean userExists(String username) {
+        return users.containsKey(username);
+    }
+    public static boolean authenticate(String username, String password) {
+        return users.containsKey(username)
+                && users.get(username).equals(password);
+    }
+}
