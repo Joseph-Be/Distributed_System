@@ -1,4 +1,4 @@
-package org.example;
+package org.example.IMAP;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -12,10 +12,17 @@ import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.nio.file.Paths;
+import org.example.common.ServerController;
+import org.example.common.ServerEventListener;
+import org.example.common.ServerLogger;
+import org.example.common.UserStore;
+import org.example.common.MailStore;
+import org.example.common.MailMessage;
+import org.example.rmi.RemoteUserStore;
 
 public class ImapServerAsync {
 
-    private static final int PORT = 143;
+    private static final int PORT = 1143;
 
     public static void main(String[] args) {
         try {
@@ -182,12 +189,12 @@ class ImapSessionAsync {
         String user = tokens.get(0);
         String pass = tokens.get(1);
 
-        if (!UserStore.authenticate(user, pass)) {
+        if (!RemoteUserStore.validateToken(user, pass)) {
             sendTagged(tag, "NO", "Authentication failed");
             return;
         }
 
-        File dir = new File("mailserver/" + user);
+        File dir = new File("shared/mailserver/" + user);
         if (!dir.exists()) {
             dir.mkdirs();
         }

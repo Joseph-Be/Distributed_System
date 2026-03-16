@@ -1,8 +1,11 @@
-package org.example;
+package org.example.SMTP;
 import java.io.*;
 import java.net.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
+
+import org.example.common.ServerEventListener;
+import org.example.common.ServerLogger;
 
 public class SmtpServer {
     // Use a custom port (e.g., 2525) to avoid needing special privileges.
@@ -177,7 +180,7 @@ class SmtpSession extends Thread {
         // Check if the recipient's directory exists.
         // The user directory is assumed to be "mailserver/username" where username is the part before '@'.
         String username = email.split("@")[0];
-        File userDir = new File(System.getProperty("user.dir") + "/mailserver/" + username);
+        File userDir = new File(System.getProperty("user.dir") + "/shared/mailserver/" + username);
         if (!userDir.exists()) {
             boolean created = userDir.mkdirs();  // Create user directory
             if (!created) {
@@ -239,7 +242,7 @@ class SmtpSession extends Thread {
             String username = recipient.split("@")[0];
 
             // Define user directory path
-            File userDir = new File("mailserver/" + username);
+            File userDir = new File("shared/mailserver/" + username);
 
             // Ensure the directory exists
             if (!userDir.exists()) {

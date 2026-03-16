@@ -1,4 +1,4 @@
-package org.example;
+package org.example.SMTP;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -7,6 +7,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.example.common.ServerController;
+import org.example.common.ServerEventListener;
 
 public class SmtpServerController implements ServerController {
 

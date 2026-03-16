@@ -1,4 +1,4 @@
-package org.example;
+package org.example.POP3;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -7,10 +7,13 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.example.common.ServerEventListener;
+import org.example.rmi.RemoteUserStore;
+
 
 
 public class Pop3Server {
-    private static final int PORT = 110; // Custom port to avoid conflicts
+    private static final int PORT = 10010; // Custom port to avoid conflicts
     private List<File> emails;
     private List<Boolean> deletionFlags = new ArrayList<>();
 
@@ -144,13 +147,13 @@ class Pop3Session extends Thread {
     }
 
     private void handleUser(String arg) {
-        if (!UserStore.userExists(arg)) {
+        if (!RemoteUserStore.userExists(arg)) {
             sendResponse("-ERR User not found");
             return;
         }
 
         username = arg;
-        userDir = new File("mailserver/" + username);
+        userDir = new File("shared/mailserver/" + username);
 
         if (!userDir.exists()) {
             if (!userDir.mkdirs()) {
@@ -175,8 +178,8 @@ class Pop3Session extends Thread {
             return;
         }
 
-        if (!UserStore.authenticate(username, arg)) {
-            sendResponse("-ERR Invalid password");
+        if (!RemoteUserStore.validateToken(username, arg)) {
+            sendResponse("-ERR Invalid token");
             return;
         }
 

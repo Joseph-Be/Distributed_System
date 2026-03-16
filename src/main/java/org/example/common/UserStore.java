@@ -1,4 +1,4 @@
-package org.example;
+package org.example.common;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -6,7 +6,7 @@ import java.nio.file.Files;
 
 public class UserStore {
 
-    private static final String USERS_FILE = "mailserver/users.json";
+    private static final String USERS_FILE = "shared/mailserver/users.json";
     private static final Map<String, String> users = new HashMap<>();
 
     static {

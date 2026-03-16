@@ -1,4 +1,4 @@
-package org.example;
+package org.example.common;
 public interface ServerController {
     void startServer();
     void stopServer();

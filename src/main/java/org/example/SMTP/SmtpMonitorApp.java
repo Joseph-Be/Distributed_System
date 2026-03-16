@@ -1,12 +1,15 @@
-package org.example;
-
+package org.example.SMTP;
 import javax.swing.SwingUtilities;
 
-public class ImapMonitorApp {
+import org.example.common.ServerEventListener;
+import org.example.common.ServerMonitorFrame;
+
+public class SmtpMonitorApp {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             ServerMonitorFrame[] frameHolder = new ServerMonitorFrame[1];
 
+           
             ServerEventListener listener = new ServerEventListener() {
                 @Override
                 public void onLog(String message) {
@@ -19,8 +22,8 @@ public class ImapMonitorApp {
                 }
             };
 
-            ImapServerController controller = new ImapServerController(143, listener);
-            frameHolder[0] = new ServerMonitorFrame("Supervision IMAP", controller);
+            SmtpServerController controller = new SmtpServerController(50025, listener);
+            frameHolder[0] = new ServerMonitorFrame("Supervision SMTP", controller);
             frameHolder[0].setVisible(true);
         });
     }

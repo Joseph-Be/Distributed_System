@@ -1,4 +1,4 @@
-package org.example;
+package org.example.common;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -9,7 +9,7 @@ public class MailStore {
      * + mailserver/<user>/<filename>.seen (persist flag)
      */
     public static List<MailMessage> loadInbox(String user) {
-        File dir = new File("mailserver/" + user);
+        File dir = new File("shared/mailserver/" + user);
         if (!dir.exists() || !dir.isDirectory()) return new ArrayList<>();
 
         File[] files = dir.listFiles((d, name) -> name.toLowerCase(Locale.ROOT).endsWith(".txt"));
@@ -31,7 +31,7 @@ public class MailStore {
     }
 
     public static void persistSeen(String user, String fileName, boolean seen) {
-        File dir = new File("mailserver/" + user);
+        File dir = new File("shared/mailserver/" + user);
         if (!dir.exists()) dir.mkdirs();
         File seenFile = new File(dir, fileName + ".seen");
         try (Writer w = new OutputStreamWriter(new FileOutputStream(seenFile), StandardCharsets.UTF_8)) {
@@ -40,7 +40,7 @@ public class MailStore {
     }
 
     private static boolean readSeenFlag(String user, String fileName) {
-        File seenFile = new File("mailserver/" + user + "/" + fileName + ".seen");
+        File seenFile = new File("shared/mailserver/" + user + "/" + fileName + ".seen");
         if (!seenFile.exists()) return false;
         try {
             String v = readAll(seenFile).trim();

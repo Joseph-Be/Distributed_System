@@ -1,6 +1,9 @@
-package org.example;
+package org.example.POP3;
 
 import javax.swing.SwingUtilities;
+
+import org.example.common.ServerEventListener;
+import org.example.common.ServerMonitorFrame;
 
 public class Pop3MonitorApp {
 
@@ -24,7 +27,7 @@ public class Pop3MonitorApp {
             };
 
             Pop3ServerController controller =
-                    new Pop3ServerController(110, listener);
+                    new Pop3ServerController(10010, listener);
 
             frameHolder[0] =
                     new ServerMonitorFrame("Supervision POP3", controller);

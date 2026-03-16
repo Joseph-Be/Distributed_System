@@ -1,4 +1,4 @@
-package org.example;
+package org.example.IMAP;
 
 import java.io.*;
 import java.net.Socket;
@@ -7,8 +7,13 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.example.common.MailMessage;
+import org.example.common.MailStore;
+import org.example.common.ServerEventListener;
+import org.example.rmi.RemoteUserStore;
+
 public class ImapServer {
-    private static final int PORT = 143;
+    private static final int PORT = 1143;
 }
 
 class ImapSession extends Thread {
@@ -123,12 +128,12 @@ class ImapSession extends Thread {
         String user = tokens.get(0);
         String pass = tokens.get(1);
 
-        if (!UserStore.authenticate(user, pass)) {
-            sendTagged(tag, " NO", "Authentication failed");
+        if (!RemoteUserStore.validateToken(user, pass)) {
+            sendTagged(tag, "NO", "Authentication failed");
             return;
         }
 
-        File dir = new File("mailserver/" + user);
+        File dir = new File("shared/mailserver/" + user);
         if (!dir.exists()) {
             dir.mkdirs();
         }
