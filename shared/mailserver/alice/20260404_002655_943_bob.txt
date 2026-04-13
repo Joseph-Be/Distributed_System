@@ -1,0 +1,16 @@
+From: bob@mail.example.com
+To: alice@gmail.com
+Subject: Test de server
+Date: Sat, 04 Apr 2026 00:26:55 +0100
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+From: bob@mail.example.com
+To: alice@gmail.com
+Subject: Test de server
+Date: Sat, 04 Apr 2026 00:26:55 +0100
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+test de serveur est bien
+alors merci bcp

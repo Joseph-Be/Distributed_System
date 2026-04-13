@@ -1,9 +1,17 @@
 package org.example.common;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
+/**
+ * Logger serveur — chaque message est préfixé par [HH:mm:ss][TYPE].
+ * Les messages sont transmis au ServerEventListener pour affichage
+ * dans le panneau de supervision (ServerMonitorFrame).
+ */
 public class ServerLogger {
+    private static final DateTimeFormatter FMT =
+            DateTimeFormatter.ofPattern("HH:mm:ss");
+
     private final ServerEventListener listener;
 
     public ServerLogger(ServerEventListener listener) {
@@ -15,11 +23,11 @@ public class ServerLogger {
     }
 
     public void client(String clientId, String cmd) {
-        log("CLIENT", clientId + " -> " + cmd);
+        log("CLIENT", clientId + " >> " + cmd);
     }
 
     public void server(String response) {
-        log("SERVEUR", "-> " + response);
+        log("SERVER", "<< " + response);
     }
 
     public void error(String msg) {
@@ -27,6 +35,8 @@ public class ServerLogger {
     }
 
     private void log(String type, String msg) {
-        listener.onLog(msg);
+        String ts      = LocalDateTime.now().format(FMT);
+        String formatted = "[" + ts + "][" + type + "] " + msg;
+        listener.onLog(formatted);
     }
 }

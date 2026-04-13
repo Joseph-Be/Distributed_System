@@ -1,30 +1,30 @@
 package org.example.IMAP;
 
 import javax.swing.SwingUtilities;
-
 import org.example.common.ServerEventListener;
 import org.example.common.ServerMonitorFrame;
 
+/**
+ * Application de supervision IMAP.
+ * Même correction que SmtpMonitorApp.
+ */
 public class ImapMonitorApp {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            ServerMonitorFrame[] frameHolder = new ServerMonitorFrame[1];
-
-            ServerEventListener listener = new ServerEventListener() {
-                @Override
-                public void onLog(String message) {
-                    frameHolder[0].onLog(message);
-                }
-
-                @Override
-                public void onClientCountChanged(int count) {
-                    frameHolder[0].onClientCountChanged(count);
-                }
+            ServerEventListener[] listenerHolder = new ServerEventListener[1];
+            listenerHolder[0] = new ServerEventListener() {
+                @Override public void onLog(String message) { }
+                @Override public void onClientCountChanged(int count) { }
             };
 
-            ImapServerController controller = new ImapServerController(1143, listener);
-            frameHolder[0] = new ServerMonitorFrame("Supervision IMAP", controller);
-            frameHolder[0].setVisible(true);
+            ImapServerController controller = new ImapServerController(1143, new ServerEventListener() {
+                @Override public void onLog(String message)           { listenerHolder[0].onLog(message); }
+                @Override public void onClientCountChanged(int count) { listenerHolder[0].onClientCountChanged(count); }
+            });
+
+            ServerMonitorFrame frame = new ServerMonitorFrame("Supervision IMAP", controller);
+            listenerHolder[0] = frame;
+            frame.setVisible(true);
         });
     }
 }

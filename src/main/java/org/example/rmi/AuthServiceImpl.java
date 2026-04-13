@@ -1,166 +1,91 @@
 package org.example.rmi;
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+import org.example.database.UserDAO;
+
+// ── No more File / Files / shared/users.json ─────────────────────────────────
+// All user persistence is now handled by UserDAO → MySQL (mail_system DB).
+// Active tokens are still kept in memory: they are session-scoped and do not
+// need to survive a server restart (clients simply re-login).
 
 public class AuthServiceImpl extends UnicastRemoteObject implements AuthService {
-    
-    private final File usersFile;
-    private Map<String, String> users = new HashMap<String, String>();
-    private Map<String, String> activeTokens = new HashMap<String, String>();
+
+    // username → token  (in-memory session store, intentionally not persisted)
+    private final Map<String, String> activeTokens = new HashMap<>();
 
     public AuthServiceImpl() throws RemoteException {
         super();
-        usersFile = new File("shared/users.json");
-        users = loadUsers();
     }
 
+    // ── getAllUsers ───────────────────────────────────────────────────────────
     @Override
     public synchronized List<String> getAllUsers() throws RemoteException {
-        return new ArrayList<>(users.keySet());
+        return UserDAO.getAllUsers();
     }
 
-    public synchronized boolean authenticate(String username, String password) {
-        return users.containsKey(username) && users.get(username).equals(password);
-    }
-
-    public synchronized boolean userExists(String username) {
-        return users.containsKey(username);
-    }
-
-    public synchronized boolean createUser(String username, String password) {
-        if (users.containsKey(username)) return false;
-        users.put(username, password);
-        saveUsers();
-        return true;
-    }
-
-    public synchronized boolean updateUser(String username, String newPassword) {
-        if (!users.containsKey(username)) return false;
-        users.put(username, newPassword);
-        saveUsers();
-        return true;
-    }
-
-    public synchronized boolean deleteUser(String username) {
-        if (!users.containsKey(username)) return false;
-        users.remove(username);
-        saveUsers();
-        return true;
-    }
-
+    // ── login ─────────────────────────────────────────────────────────────────
+    // Authenticates against the DB via UserDAO.authenticate(), then issues a
+    // UUID token stored in memory for the lifetime of the session.
     @Override
     public synchronized String login(String username, String password) throws RemoteException {
-        if (!users.containsKey(username)) {
+        if (!UserDAO.authenticate(username, password)) {
             return null;
         }
-
-        if (!users.get(username).equals(password)) {
-            return null;
-        }
-
-        String token = java.util.UUID.randomUUID().toString();
+        String token = UUID.randomUUID().toString();
         activeTokens.put(username, token);
         return token;
     }
 
+    // ── validateToken ─────────────────────────────────────────────────────────
     @Override
     public synchronized boolean validateToken(String username, String token) throws RemoteException {
-        if (!activeTokens.containsKey(username)) {
-            return false;
-        }
-
-        return activeTokens.get(username).equals(token);
+        String stored = activeTokens.get(username);
+        return stored != null && stored.equals(token);
     }
 
+    // ── logout ────────────────────────────────────────────────────────────────
     @Override
     public synchronized boolean logout(String username, String token) throws RemoteException {
         if (!validateToken(username, token)) {
             return false;
         }
-
         activeTokens.remove(username);
         return true;
     }
 
-    private Map<String, String> loadUsers() {
-        Map<String, String> map = new HashMap<>();
-
-        try {
-            if (!usersFile.exists()) return map;
-
-            String content = new String(
-                    Files.readAllBytes(usersFile.toPath()),
-                    StandardCharsets.UTF_8
-            );
-
-            content = content.trim();
-
-            if (content.startsWith("{") && content.endsWith("}")) {
-                content = content.substring(1, content.length() - 1);
-            }
-
-            if (!content.trim().isEmpty()) {
-
-                String[] entries = content.split(",");
-
-                for (String entry : entries) {
-                    String[] pair = entry.split(":");
-
-                    if (pair.length == 2) {
-                        String key = clean(pair[0]);
-                        String value = clean(pair[1]);
-                        map.put(key, value);
-                    }
-                }
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return map;
+    // ── userExists ────────────────────────────────────────────────────────────
+    @Override
+    public synchronized boolean userExists(String username) throws RemoteException {
+        return UserDAO.userExists(username);
     }
 
-    private void saveUsers() {
-        try {
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("{\n");
-
-            int i = 0;
-            for (Map.Entry<String, String> entry : users.entrySet()) {
-
-                sb.append("  \"")
-                  .append(entry.getKey())
-                  .append("\": \"")
-                  .append(entry.getValue())
-                  .append("\"");
-
-                if (i < users.size() - 1) sb.append(",");
-
-                sb.append("\n");
-                i++;
-            }
-
-            sb.append("}");
-
-            Files.write(usersFile.toPath(),
-                        sb.toString().getBytes(StandardCharsets.UTF_8));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    // ── createUser ────────────────────────────────────────────────────────────
+    @Override
+    public synchronized boolean createUser(String username, String password) throws RemoteException {
+        return UserDAO.createUser(username, password);
     }
 
-    private String clean(String s) {
-        return s.trim().replace("\"", "");
+    // ── updateUser ────────────────────────────────────────────────────────────
+    @Override
+    public synchronized boolean updateUser(String username, String newPassword) throws RemoteException {
+        return UserDAO.updateUserPassword(username, newPassword);
+    }
+
+    // ── deleteUser ────────────────────────────────────────────────────────────
+    // Delegates to UserDAO which soft-deletes (sets status = 'disabled').
+    // Also invalidates any active session token for that user.
+    @Override
+    public synchronized boolean deleteUser(String username) throws RemoteException {
+        boolean deleted = UserDAO.deleteUser(username);
+        if (deleted) {
+            activeTokens.remove(username);
+        }
+        return deleted;
     }
 }
